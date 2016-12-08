@@ -19,6 +19,12 @@ import com.google.common.collect.Lists;
 import fr.ranksql.neutronstars.commands.RankCommand;
 import fr.ranksql.neutronstars.utils.RankUtils;
 
+/**
+ * Accès a la base de donnée.
+ * @author Neutron_Stars
+ * @version 1.1
+ */
+
 public class SQLManager {
 
 	/**
@@ -36,7 +42,8 @@ public class SQLManager {
 	/**
 	 * List des tables et colonnes de la base de donnée.
 	 */
-	private String table_rank, table_rank_name,table_rank_prefix, table_rank_suffix, table_rank_power, table_rank_default, table_player, table_player_uuid, table_player_name, table_player_rank;
+	private String table_rank, table_rank_name,table_rank_prefix, table_rank_suffix, table_rank_power, table_rank_default, table_player, table_player_uuid, table_player_name, table_player_rank,
+					table_chat, table_chat_name, table_chat_prefix, table_chat_suffix, table_chat_separator;
 	
 	/**
 	 * Fichier RankSQL.yml
@@ -69,6 +76,11 @@ public class SQLManager {
 			table_player_uuid = config.getString("TABLE_PLAYER_UUID");
 			table_player_name = config.getString("TABLE_PLAYER_NAME");
 			table_player_rank = config.getString("TABLE_PLAYER_RANK");
+			table_chat = config.getString("TABLE_CHAT");
+			table_chat_name = config.getString("TABLE_CHAT_NAME");
+			table_chat_prefix = config.getString("TABLE_CHAT_PREFIX");
+			table_chat_suffix = config.getString("TABLE_CHAT_SUFFIX");
+			table_chat_separator = config.getString("TABLE_CHAT_SEPARATOR");
 			RankUtils.setPowerRankCommand(config.getInt("POWER_RANK_COMMAND"));
 			
 			System.out.println("[MySQL] -- Connected");
@@ -100,6 +112,12 @@ public class SQLManager {
 		config.set("TABLE_PLAYER_NAME", "");
 		config.set("TABLE_PLAYER_RANK", "");
 		config.set("POWER_RANK_COMMAND", 100);
+		config.set("TABLE_CHAT", "");
+		config.set("TABLE_CHAT_NAME", "");
+		config.set("TABLE_CHAT_PREFIX", "");
+		config.set("TABLE_CHAT_SUFFIX", "");
+		config.set("TABLE_CHAT_SEPARATOR", "");
+		
 		
 		try{config.save(file);}catch(IOException ioe){System.out.println("Impossible de sauvegarder le fichier \"RankSQL.yml\".");}
 		System.out.println("Veuillez arreter votre serveur afin de remplir le dossier RankSQL.yml pour pouvoir vous connecter sur votre base de donnee.");
@@ -185,7 +203,7 @@ public class SQLManager {
 		try{
 			ResultSet result = select(table_rank_prefix, table_rank, table_rank_name, "'"+name+"'");
 			result.next();
-			return result.getString(table_rank_prefix).toLowerCase().equalsIgnoreCase("null") ? null : result.getString(table_rank_prefix);
+			return result.getString(table_rank_prefix).toLowerCase().equalsIgnoreCase("null") ? "" : result.getString(table_rank_prefix);
 		}catch(SQLException e){System.out.println(e.getMessage());}
 		
 		return null;
@@ -203,7 +221,59 @@ public class SQLManager {
 		try{
 			ResultSet result = select(table_rank_suffix, table_rank, table_rank_name, "'"+name+"'");
 			result.next();
-			return result.getString(table_rank_suffix).toLowerCase().equalsIgnoreCase("null") ? null : result.getString(table_rank_suffix);
+			return result.getString(table_rank_suffix).toLowerCase().equalsIgnoreCase("null") ? "" : result.getString(table_rank_suffix);
+		}catch(SQLException e){System.out.println(e.getMessage());}
+		return null;
+	}
+	
+	
+	/**
+	 * Recupère le prefix d'un tchat en fonction du grade.
+	 * @param name
+	 *      Nom du grade.
+	 * @return le prefix.
+	 * @since 1.1
+	 * @throws SQLException
+	 */
+	public String getChatPrefix(String name){
+		try{
+			ResultSet result = select(table_chat_prefix, table_chat, table_chat_name, "'"+name+"'");
+			result.next();
+			return result.getString(table_chat_prefix).toLowerCase().equalsIgnoreCase("null") ? "" : result.getString(table_chat_prefix);
+		}catch(SQLException e){System.out.println(e.getMessage());}
+		return null;
+	}
+	
+	/**
+	 * Recupère le suffix d'un tchat en fonction du grade.
+	 * @param name
+	 *      Nom du grade.
+	 * @return le suffix
+	 * @since 1.1
+	 * @throws SQLException
+	 */
+	public String getChatSuffix(String name){
+		try{
+			ResultSet result = select(table_chat_suffix, table_chat, table_chat_name, "'"+name+"'");
+			result.next();
+			return result.getString(table_chat_suffix).toLowerCase().equalsIgnoreCase("null") ? "" : result.getString(table_chat_suffix);
+		}catch(SQLException e){System.out.println(e.getMessage());}
+		return null;
+	}
+	
+	/**
+	 * Recupère la sépartation entre le nom est le message d'un tchat en fonction du grade.
+	 * @param name
+	 *      Nom du grade.
+	 * @return la séparation.
+	 * @since 1.1
+	 * @throws SQLException
+	 */
+	public String getChatSeparator(String name){
+		try{
+			ResultSet result = select(table_chat_separator, table_chat, table_chat_name, "'"+name+"'");
+			result.next();
+			return result.getString(table_chat_separator).toLowerCase().equalsIgnoreCase("null") ? "" : result.getString(table_chat_separator);
 		}catch(SQLException e){System.out.println(e.getMessage());}
 		return null;
 	}
@@ -258,6 +328,7 @@ public class SQLManager {
 	public boolean newRank(String name, String prefix, String suffix, int power){
 		try{
 			statement.executeUpdate("INSERT INTO "+table_rank+" VALUES ('"+name+"','"+prefix+"','"+suffix+"',"+power+",0)");
+			statement.executeUpdate("INSERT INTO "+table_chat+" VALUES ('"+name+"','"+prefix+"','"+suffix+"',' §f: ')");
 			return true;
 		}catch(SQLException e){System.out.println(e.getMessage());}
 		return false;
@@ -272,6 +343,7 @@ public class SQLManager {
 	 */
 	public void removeRank(String name){
 		delete(table_rank, table_rank_name, "'"+name+"'");
+		delete(table_chat, table_chat_name, "'"+name+"'");
 	}
 
 	/**
@@ -426,6 +498,45 @@ public class SQLManager {
 	 */
 	public void setDefaultRank(String name, int defaultRank){
 		update(table_rank, table_rank_default, ""+defaultRank, table_rank_name, "'"+name+"'");
+	}
+	
+	/**
+	 * Modifie le prefix d'un tchat en fonction du grade.
+	 * @param name
+	 * 		Le nom  du grade.
+	 * @param prefix
+	 * 		Le nouveau prefix.
+	 * @since 1.1
+	 * @see SQLManager#update(String, String, String, String, String)
+	 */
+	public void setChatPrefix(String name, String prefix){
+		update(table_chat, table_chat_prefix, "'"+prefix+"'", table_chat_name, "'"+name+"'");
+	}
+	
+	/**
+	 * Modifie le suffix d'un tchat en fonction du grade.
+	 * @param name
+	 * 		Le nom  du grade.
+	 * @param prefix
+	 * 		Le nouveau suffix.
+	 * @since 1.1
+	 * @see SQLManager#update(String, String, String, String, String)
+	 */
+	public void setChatSuffix(String name, String suffix){
+		update(table_chat, table_chat_suffix, "'"+suffix+"'", table_chat_name, "'"+name+"'");
+	}
+	
+	/**
+	 * Modifie la séparation du name et du message d'un tchat en fonction du grade.
+	 * @param name
+	 * 		Le nom  du grade.
+	 * @param separator
+	 * 		La nouvelle séparation.
+	 * @since 1.1
+	 * @see SQLManager#update(String, String, String, String, String)
+	 */
+	public void setChatSeparator(String name, String separator){
+		update(table_chat, table_chat_separator, "'"+separator+"'", table_chat_name, "'"+name+"'");
 	}
 	
 	/**

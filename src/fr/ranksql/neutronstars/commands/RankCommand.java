@@ -21,7 +21,7 @@ import fr.ranksql.neutronstars.utils.RankUtils;
  * Gestion de la commande rank.
  * 
  * @author Neutron_Stars
- * @version 1.0
+ * @version 1.1
  */
 
 public class RankCommand implements CommandExecutor, TabCompleter{
@@ -90,7 +90,7 @@ public class RankCommand implements CommandExecutor, TabCompleter{
 		
 		if(a.length == 2){
 			if(a[0].equalsIgnoreCase("remove") || a[0].equalsIgnoreCase("default")) return completer(a[1], RankUtils.getDataBase().getTeams());
-			if(a[0].equalsIgnoreCase("option")) return completer(a[1], Arrays.asList("prefix", "suffix", "power"));
+			if(a[0].equalsIgnoreCase("option")) return completer(a[1], Arrays.asList("prefix", "suffix", "power", "chat"));
 			if(a[0].equalsIgnoreCase("player")) return completer(a[1], Arrays.asList("add", "remove"));
 		}
 		
@@ -102,6 +102,7 @@ public class RankCommand implements CommandExecutor, TabCompleter{
 		if(a.length == 4){
 			if(a[0].equalsIgnoreCase("add")) return completer(a[3], Arrays.asList("null"));
 			if(a[0].equalsIgnoreCase("player") && (a[1].equalsIgnoreCase("add") || a[1].equalsIgnoreCase("remove"))) return completer(a[3], RankUtils.getDataBase().getTeams());
+			if(a[0].equalsIgnoreCase("chat")) return completer(a[3], Arrays.asList("prefix", "suffix", "separator"));
 		}
 		
 		return null;
@@ -240,7 +241,8 @@ public class RankCommand implements CommandExecutor, TabCompleter{
 	 * @see RankCommand#optionPrefix(CommandSender, String, String)
 	 * @see RankCommand#optionSuffix(CommandSender, String, String)
 	 * @see RankCommand#optionPower(CommandSender, String, String)
-	 * @since 1.0
+	 * @see RankCommand#optionChat(CommandSender, String[])
+	 * @since 1.1
 	 */
 	private boolean option(CommandSender s, String[] a){
 		if(a.length < 4) return helpCommand(s);
@@ -248,7 +250,69 @@ public class RankCommand implements CommandExecutor, TabCompleter{
 		if(a[1].equalsIgnoreCase("prefix")) return optionPrefix(s, a[2], a[3].replace('&', '§').replace('€', ' '));
 		if(a[1].equalsIgnoreCase("suffix")) return optionSuffix(s, a[2], a[3].replace('&', '§').replace('€', ' '));
 		if(a[1].equalsIgnoreCase("power")) return optionPower(s, a[2], a[3]);
+		if(a[1].equalsIgnoreCase("chat")) return optionChat(s, a);
 		return helpCommand(s);
+	}
+	
+	//rank option chat admin prefix fjfoif
+	
+	private boolean optionChat(CommandSender s, String[] a){
+		if(a.length < 5) return helpCommand(s);
+		if(a[3].equalsIgnoreCase("prefix")) return optionChatPrefix(s, a[2], a[4].replace('&', '§').replace('€', ' '));
+		if(a[3].equalsIgnoreCase("suffix")) return optionChatSuffix(s, a[2], a[4].replace('&', '§').replace('€', ' '));
+		if(a[3].equalsIgnoreCase("separator")) return optionChatSeparator(s, a[2], a[4].replace('&', '§').replace('€', ' '));
+		return helpCommand(s);
+	}
+	
+	/**
+	 * Methode pour modifier le prefix chat d'un grade.
+	 * @param s
+	 * 			Celui qui a envoyé la commande.
+	 * @param rank
+	 * 			Le grade qui doit être modifé.
+	 * @param prefix
+	 * 			Le nouveau prefix chat du grade.
+	 * @return Boolean true
+	 * @since 1.1
+	 */
+	private boolean optionChatPrefix(CommandSender s, String rank, String prefix){
+		RankUtils.getDataBase().setChatPrefix(rank, prefix);
+		s.sendMessage("§2Le prefix du tchat a bien été changé.");
+		return true;
+	}
+	
+	/**
+	 * Methode pour modifier le suffix chat d'un grade.
+	 * @param s
+	 * 			Celui qui a envoyé la commande.
+	 * @param rank
+	 * 			Le grade qui doit être modifé.
+	 * @param prefix
+	 * 			Le nouveau suffix chat du grade.
+	 * @return Boolean true
+	 * @since 1.1
+	 */
+	private boolean optionChatSuffix(CommandSender s, String rank, String suffix){
+		RankUtils.getDataBase().setChatSuffix(rank, suffix);
+		s.sendMessage("§2Le suffix du tchat a bien été changé.");
+		return true;
+	}
+	
+	/**
+	 * Methode pour modifier le separateur du nom et message du chat d'un grade.
+	 * @param s
+	 * 			Celui qui a envoyé la commande.
+	 * @param rank
+	 * 			Le grade qui doit être modifé.
+	 * @param prefix
+	 * 			La nouvelle séparation de chat du grade.
+	 * @return Boolean true
+	 * @since 1.1
+	 */
+	private boolean optionChatSeparator(CommandSender s, String rank, String separator){
+		RankUtils.getDataBase().setChatSeparator(rank, separator);
+		s.sendMessage("§2La separation du tchat a bien été changé.");
+		return true;
 	}
 	
 	/**
@@ -264,7 +328,7 @@ public class RankCommand implements CommandExecutor, TabCompleter{
 	 */
 	private boolean optionPrefix(CommandSender s, String rank, String prefix){
 		RankUtils.getDataBase().setPrefix(rank, prefix);
-		if(prefix.toLowerCase().equalsIgnoreCase("null")) RankUtils.getScoreboard().getTeam(rank).setPrefix(null);
+		if(prefix.toLowerCase().equalsIgnoreCase("null")) RankUtils.getScoreboard().getTeam(rank).setPrefix("");
 		else RankUtils.getScoreboard().getTeam(rank).setPrefix(prefix);
 		s.sendMessage("§2Le prefix a bien été changé.");
 		return true;
@@ -283,7 +347,7 @@ public class RankCommand implements CommandExecutor, TabCompleter{
 	 */
 	private boolean optionSuffix(CommandSender s, String rank, String suffix){
 		RankUtils.getDataBase().setSuffix(rank, suffix);
-		if(suffix.toLowerCase().equalsIgnoreCase("null")) RankUtils.getScoreboard().getTeam(rank).setSuffix(null);
+		if(suffix.toLowerCase().equalsIgnoreCase("null")) RankUtils.getScoreboard().getTeam(rank).setSuffix("");
 		else RankUtils.getScoreboard().getTeam(rank).setSuffix(suffix);
 		s.sendMessage("§2Le suffix a bien été changé.");
 		return true;
